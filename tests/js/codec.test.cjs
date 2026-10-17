@@ -11,7 +11,7 @@ const vectors=path.resolve(__dirname,'../../protocol/vectors');
 const cases=JSON.parse(fs.readFileSync(path.join(vectors,'cases.json')));
 const read=p=>new Uint8Array(fs.readFileSync(path.join(vectors,p)));
 const metadata=c=>({id:new Uint8Array(Buffer.from(c.id,'hex')),name:c.filename,matrixSize:c.matrix_size||128,fileSize:c.size,
-  sha256:new Uint8Array(Buffer.from(c.sha256,'hex'))});
+  sha256:new Uint8Array(Buffer.from(c.sha256,'hex')),...(c.color_mode?{colorMode:c.color_mode}:{})});
 
 test('CRC standard vector and symbol bit order',()=>{
   assert.equal(codec.crc32(Buffer.from('123456789')),0xcbf43926);
@@ -26,7 +26,8 @@ for(const c of cases) test('independent Python golden: '+c.case,()=>{
   assert.deepEqual(codec.encodeMetadata(meta),read(c.frames[0]));
   assert.deepEqual(codec.decodeFrame(read(c.frames[0])).meta,meta);
   c.frames.slice(1).forEach((p,i)=>{
-    const encoded=codec.encodeData(meta,i,input.subarray(i*codec.profileForSize(meta.matrixSize).blockSize,(i+1)*codec.profileForSize(meta.matrixSize).blockSize));
+    const blockSize=codec.layout(meta.matrixSize,meta.colorMode).blockSize;
+    const encoded=codec.encodeData(meta,i,input.subarray(i*blockSize,(i+1)*blockSize));
     assert.deepEqual(encoded,read(p));assert.equal(codec.decodeFrame(encoded).index,i);
   });
 });
@@ -114,7 +115,71 @@ test('profiles reject mismatched header/length/capacity and unsupported dimensio
     const bad=frame.slice();bad[6]=p.id===1?2:1;
     new DataView(bad.buffer).setUint32(bad.length-4,codec.crc32(bad.subarray(0,bad.length-4)),true);
     assert.throws(()=>codec.decodeFrame(bad),/header/);
-    assert.equal(render.renderFrame(frame,2).width,p.logicalSize*2);
+    assert.equal(render.renderFrame(frame,2).width,p.logicalWidth*2);
+    assert.equal(render.renderFrame(frame,2).height,p.logicalHeight*2);
   }
   assert.throws(()=>codec.encodeMetadata({...metadata(cases[1]),matrixSize:192}),/matrix size/);
+});
+test('wide profile uses CRC-covered high payload length without changing older profiles',()=>{
+  const profile=codec.profileForSize('1028x512');
+  assert.equal(profile.blockSize,131516);
+  const c=cases.find(c=>c.case==='profile-1028x512-partial');
+  const full=read(c.frames[1]);
+  assert.equal(full[34],2);assert.equal(full[35],0);
+  assert.equal(codec.decodeFrame(full).payload.length,131516);
+  const short=full.slice();short[34]=0;
+  new DataView(short.buffer).setUint32(short.length-4,codec.crc32(short.subarray(0,short.length-4)),true);
+  assert.throws(()=>codec.decodeFrame(short),/padding/);
+  const old=read(cases.find(c=>c.case==='profile-512-boundary').frames[1]);
+  old[34]=1;
+  new DataView(old.buffer).setUint32(old.length-4,codec.crc32(old.subarray(0,old.length-4)),true);
+  assert.throws(()=>codec.decodeFrame(old),/header/);
+});
+test('512x256 reserves the high length bytes and uses profile ID 6',()=>{
+  const p=codec.profileForSize('512x256');
+  assert.equal(p.id,6);assert.equal(p.frameSize,32768);assert.equal(p.blockSize,32700);
+  const frame=read(cases.find(c=>c.case==='profile-512x256-boundary').frames[1]);
+  assert.equal(frame[6],6);assert.equal(frame[34],0);assert.equal(frame[35],0);
+  assert.equal(codec.decodeFrame(frame).payload.length,32700);
+  const bad=frame.slice();bad[34]=1;
+  new DataView(bad.buffer).setUint32(bad.length-4,codec.crc32(bad.subarray(0,bad.length-4)),true);
+  assert.throws(()=>codec.decodeFrame(bad),/header/);
+});
+test('256x128 uses profile ID 7 and keeps high length bytes reserved',()=>{
+  const p=codec.profileForSize('256x128');
+  assert.equal(p.id,7);assert.equal(p.frameSize,8192);assert.equal(p.blockSize,8124);
+  const frame=read(cases.find(c=>c.case==='profile-256x128-boundary').frames[1]);
+  assert.equal(frame[6],7);assert.equal(frame[34],0);assert.equal(frame[35],0);
+  assert.equal(codec.decodeFrame(frame).payload.length,8124);
+  const bad=frame.slice();bad[34]=1;
+  new DataView(bad.buffer).setUint32(bad.length-4,codec.crc32(bad.subarray(0,bad.length-4)),true);
+  assert.throws(()=>codec.decodeFrame(bad),/header/);
+});
+test('color modes pack exact frame bytes and keep VMT1 four-color vectors unchanged',()=>{
+  const baseline=read(cases[5].frames[1]);
+  assert.equal(baseline[4],1);assert.equal(baseline[7],0);
+  for(const mode of [2,8,16,24]) {
+    const spec=codec.layout(128,mode),meta={...metadata(cases[5]),colorMode:mode};
+    const frame=codec.encodeMetadata(meta);
+    assert.equal(frame[4],2);assert.equal(frame[6],1);assert.equal(frame[7],mode);
+    assert.equal(frame.length,spec.frameSize);
+    assert.deepEqual(codec.unpackSymbols(codec.packSymbols(frame),128,mode),frame);
+    assert.deepEqual(codec.decodeFrame(frame).meta,meta);
+    assert.equal(render.renderFrame(frame,2).width,320);
+  }
+});
+test('sender local color comparison detects changed Canvas pixels',()=>{
+  for(const mode of [2,8,16,24]) {
+    const frame=codec.encodeMetadata({...metadata(cases[0]),colorMode:mode});
+    const bitmap=render.renderFrame(frame,2),canvas={getContext:()=>({getImageData(x,y){
+      const offset=(y*bitmap.width+x)*4;
+      return {data:bitmap.data.slice(offset,offset+4)};
+    }})};
+    const clean=render.compareCanvasColors(canvas,frame,2);
+    assert.equal(clean.changed,0);assert.equal(clean.maximum,0);
+    const position=mode===24?[(19*2),(128+21)*2]:[(19*2),(128+21)*2];
+    bitmap.data[(position[1]*bitmap.width+position[0])*4]^=255;
+    const changed=render.compareCanvasColors(canvas,frame,2);
+    assert.ok(changed.changed>=1);assert.ok(changed.maximum>0);
+  }
 });

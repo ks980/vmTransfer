@@ -1,5 +1,5 @@
 body { margin: 2rem; color: #20242b; background: #f3f4f6; font: 16px system-ui,sans-serif; }
-main { max-width: 1100px; margin: auto; }
+main { margin: 0; }
 button,input,select { font: inherit; padding: .4rem; margin: .2rem; }
 button { cursor: pointer; }
 button:disabled { cursor: default; }
@@ -8,6 +8,8 @@ input[type=number] { width: 6rem; }
 canvas { display: block; image-rendering: pixelated; background: white; }
 #status { white-space: pre-wrap; overflow-wrap: anywhere; }
 #file-info,code { overflow-wrap: anywhere; }
-#status,#progress,#timing { margin: .4rem 0; min-height: 1.2em; }
-.hint,.intro { color: #4b5563; margin: .6rem 0; }
+#status,#progress { margin: .4rem 0; }
+.intro { color: #4b5563; margin: .6rem 0; }
 .notice { color: #8a3b00; background: #fff3cc; padding: .6rem; }
+.color-bars { display: grid; grid-template-columns: 3rem max-content; align-items: center; gap: .2rem; }
+.color-bars canvas { border: 1px solid #777; max-width: 100%; }

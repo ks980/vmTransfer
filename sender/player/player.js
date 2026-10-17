@@ -23,7 +23,8 @@
     const clock=options.clock||{now:()=>performance.now(),setTimeout:(fn,delay)=>setTimeout(fn,Math.ceil(delay)),clearTimeout:id=>clearTimeout(id)};
     const paint=options.paint||((bytes,scale)=>renderer.drawCanvas(canvas,renderer.renderFrame(bytes,scale)));
     const clear=options.clear||((scale)=>{
-      canvas.width=(32+(transfer.matrixSize||128))*scale;canvas.height=canvas.width;
+      const size=String(transfer.matrixSize||128).split('x').map(Number);
+      canvas.width=(32+size[0])*scale;canvas.height=(32+(size[1]||size[0]))*scale;
       const context=canvas.getContext('2d');context.fillStyle='#ffffff';context.fillRect(0,0,canvas.width,canvas.height);
     });
     let fps=options.fps===undefined?5:options.fps,scale=options.scale===undefined?4:options.scale;
@@ -40,7 +41,10 @@
       if(!TARGET_RATES.includes(value))throw new RangeError('帧率必须为 5、10、15、20、25 或 30 FPS');
     }
     function validateScale(value) {
-      if(!Number.isInteger(value)||value<1||value>16)throw new RangeError('每符号像素必须为 1 到 16 的整数');
+      const size=String(transfer.matrixSize||128).split('x').map(Number);
+      const w=size[0]+32,h=(size[1]||size[0])+32;
+      const max=Math.min(16,Math.floor(8192/w),Math.floor(8192/h),Math.floor(Math.sqrt(32*1024*1024/(w*h))));
+      if(!Number.isInteger(value)||value<1||value>max)throw new RangeError('每符号像素必须为 1 到 '+max+' 的整数');
     }
     function getProgress() {
       const span=times.length>1?times[times.length-1]-times[0]:0;

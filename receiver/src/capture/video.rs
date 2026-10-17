@@ -185,44 +185,59 @@ mod tests {
     }
 
     #[test]
-    fn mapped_bgrx_crop_enters_the_same_decoder_as_png() {
-        let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../protocol/vectors/one");
-        let original = crate::capture::png::load_png(&root.join("frame-000.png")).unwrap();
-        let width = original.width + 11;
-        let height = original.height + 13;
-        let stride = width * 4 + 32;
-        let mut mapped = vec![120; 17 + stride * height];
-        for y in 0..original.height {
-            for x in 0..original.width {
-                let p = (y * original.width + x) * 4;
-                let q = 17 + (y + 7) * stride + (x + 3) * 4;
-                mapped[q..q + 4].copy_from_slice(&[
-                    original.rgba[p + 2],
-                    original.rgba[p + 1],
-                    original.rgba[p],
-                    0,
-                ]);
+    fn mapped_bgrx_crop_enters_the_same_decoder_as_png_for_every_color_mode() {
+        for case in [
+            "one",
+            "color-2-partial",
+            "color-8-partial",
+            "color-16-partial",
+            "color-24-partial",
+        ] {
+            let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+                .join("../protocol/vectors")
+                .join(case);
+            for frame_number in 0..=1 {
+                let name = format!("frame-{frame_number:03}");
+                let original =
+                    crate::capture::png::load_png(&root.join(format!("{name}.png"))).unwrap();
+                let width = original.width + 11;
+                let height = original.height + 13;
+                let stride = width * 4 + 32;
+                let mut mapped = vec![120; 17 + stride * height];
+                for y in 0..original.height {
+                    for x in 0..original.width {
+                        let p = (y * original.width + x) * 4;
+                        let q = 17 + (y + 7) * stride + (x + 3) * 4;
+                        mapped[q..q + 4].copy_from_slice(&[
+                            original.rgba[p + 2],
+                            original.rgba[p + 1],
+                            original.rgba[p],
+                            0,
+                        ]);
+                    }
+                }
+                let copied = copy_video(
+                    &mapped,
+                    VideoLayout {
+                        width,
+                        height,
+                        stride: stride as i32,
+                        format: PackedFormat::Bgrx,
+                        offset: 17,
+                        size: stride * height,
+                        crop: [3, 7, original.width, original.height],
+                    },
+                )
+                .unwrap();
+                assert_eq!(copied.rgba, original.rgba, "{case} {name}");
+                let decoded = crate::codec::decode_bitmap(copied.view().unwrap()).unwrap();
+                let expected = crate::protocol::parse_frame(
+                    &std::fs::read(root.join(format!("{name}.bin"))).unwrap(),
+                )
+                .unwrap();
+                assert_eq!(decoded.header(), expected.header(), "{case} {name}");
+                assert_eq!(decoded.payload(), expected.payload(), "{case} {name}");
             }
         }
-        let copied = copy_video(
-            &mapped,
-            VideoLayout {
-                width,
-                height,
-                stride: stride as i32,
-                format: PackedFormat::Bgrx,
-                offset: 17,
-                size: stride * height,
-                crop: [3, 7, original.width, original.height],
-            },
-        )
-        .unwrap();
-        assert_eq!(copied.rgba, original.rgba);
-        let decoded = crate::codec::decode_bitmap(copied.view().unwrap()).unwrap();
-        let expected =
-            crate::protocol::parse_frame(&std::fs::read(root.join("frame-000.bin")).unwrap())
-                .unwrap();
-        assert_eq!(decoded.header(), expected.header());
-        assert_eq!(decoded.payload(), expected.payload());
     }
 }

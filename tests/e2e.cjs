@@ -21,10 +21,10 @@ const outputRoot=path.join(root,'target');fs.mkdirSync(outputRoot,{recursive:tru
 const work=fs.mkdtempSync(path.join(outputRoot,'e2e-'));
 const results=[];
 
-async function prepare(c) {
+async function prepare(c,colorMode) {
   const input=fs.readFileSync(path.join(vectorRoot,c.input));
   const source={name:c.filename,size:input.length,async readAt(offset,length){return new Uint8Array(input.subarray(offset,offset+length));}};
-  const session=await transfer.prepareTransfer(source,{id:new Uint8Array(Buffer.from(c.id,'hex')),matrixSize:c.matrix_size||128});
+  const session=await transfer.prepareTransfer(source,{id:new Uint8Array(Buffer.from(c.id,'hex')),matrixSize:c.matrix_size||128,colorMode:colorMode||c.color_mode});
   const frames=[session.metadataFrame];
   for(let i=0;i<session.totalBlocks;i++)frames.push(await session.readFrame(i));
   return {input,frames,meta:session.metadata,prepared:session};
@@ -59,15 +59,35 @@ async function main() {
   cp.execFileSync('cargo',['build','--offline','--locked','--release','--manifest-path','receiver/Cargo.toml'],{cwd:root,stdio:'inherit'});
   for(const c of cases) {
     const p=await prepare(c);
-    run('golden-'+c.case,p.frames.map(f=>renderFrame(f,3)),p.input,{stopCheck:true});
+    const report=run('golden-'+c.case,p.frames.map(f=>renderFrame(f,3)),p.input,{stopCheck:true});
+    const dims=codec.profileForSize(c.matrix_size||128);
+    assert.deepEqual(report.visual_format,{matrix_width:dims.matrixWidth,matrix_height:dims.matrixHeight,
+      color_mode:c.color_mode||4});
   }
-  for(const n of [160,256]) {
+  // VMT2 indexed and RGB888 modes use the same native PNG decoder and collector.
+  for(const mode of [2,8,16,24]) {
+    const q=await prepare(cases.find(c=>c.case==='random'),mode);
+    run(`color-${mode}-random`,q.frames.map(f=>renderFrame(f,3)),q.input,{stopCheck:true});
+    if(mode!==24)run(`color-${mode}-mild-distortion`,q.frames.map(f=>image.color(image.pad(renderFrame(f,3)))),q.input);
+    const bad=q.frames[1].slice();bad[100]^=1;
+    run(`color-${mode}-crc-loops`,[renderFrame(q.frames[0],3),renderFrame(bad,3),...q.frames.slice(1).map(f=>renderFrame(f,3))],q.input,
+      {check:c=>assert.ok(c.crc_failures>=1)});
+  }
+  const rgbRectangle=await prepare(cases.find(c=>c.case==='profile-256x128-partial'),24);
+  run('color-24-rectangle',rgbRectangle.frames.map(f=>renderFrame(f,2)),rgbRectangle.input);
+  const rgbLossy=await prepare(cases.find(c=>c.case==='random'),24);
+  run('color-24-lossy-rejected',rgbLossy.frames.map(f=>image.color(renderFrame(f,3))),rgbLossy.input,
+    {status:2,check:c=>assert.ok(c.crc_failures+c.palette_failures>=1)});
+  for(const n of [160,256,512,"1028x512","512x256","256x128"]) {
     const q=await prepare(cases.find(c=>c.case===`profile-${n}-partial`));
-    const rasters=q.frames.map(f=>renderFrame(f,4));
-    run(`profile-${n}-distortion`,rasters.map(b=>image.color(image.pad(image.rotate(image.resize(b,1.13,.875,'bilinear'),1)))),q.input);
+    const rasters=q.frames.map(f=>renderFrame(f,n===512||n==="1028x512"||n==="512x256"||n==="256x128"?2:4));
+    const large=n===512||n==='1028x512'||n==='512x256'||n==='256x128';
+    run(`profile-${n}-distortion`,rasters.map(b=>large?image.color(image.pad(image.resize(b,1.1,1.1,'bilinear'))):
+      image.color(image.pad(image.rotate(image.resize(b,1.13,.875,'bilinear'),1)))),q.input);
+    if(large)run(`profile-${n}-rotate`,rasters.map(b=>image.pad(image.rotate(b,1))),q.input);
     const bad=q.frames[1].slice();bad[200]^=1;
     run(`profile-${n}-loops`,[rasters[1],rasters[0],rasters[3],rasters[1],rasters[1],
-      image.mix(rasters[1],rasters[2]),renderFrame(bad,4),rasters[0],rasters[2]],q.input,
+      image.mix(rasters[1],rasters[2]),renderFrame(bad,n===512||n==="1028x512"||n==="512x256"||n==="256x128"?2:4),rasters[0],rasters[2]],q.input,
       {stopCheck:true,check:c=>{assert.equal(c.waiting_metadata,1);assert.equal(c.duplicates,1);assert.ok(c.crc_failures>=2);}});
   }
   const p=await prepare(cases.find(c=>c.case==='random'));
@@ -95,7 +115,7 @@ async function main() {
   run('missing-locators',[white,base[0],...base.slice(1)],p.input,{check:c=>assert.equal(c.locator_failures,1)});
 
   // Exercise the implemented automatic player, not a manually assembled cycle.
-  for(const caseName of ['random','empty','profile-160-partial','profile-256-partial']) {
+  for(const caseName of ['random','empty','profile-160-partial','profile-256-partial','profile-512-partial','profile-1028x512-partial','profile-512x256-partial','profile-256x128-partial']) {
     const prepared=await prepare(cases.find(c=>c.case===caseName));
     const clock=new FakeClock(),frames=[];
     const player=createPlayer(prepared.prepared,null,()=>{},{clock,scale:3,

@@ -66,6 +66,7 @@ fn receive(
 ) -> Result<i32, Box<dyn std::error::Error>> {
     let mut session = ReceiveSession::new(destination);
     let mut last_progress = std::time::Instant::now();
+    let mut reported_format = false;
     while session.is_consuming() {
         let Some(captured) = source.next_frame()? else {
             break;
@@ -74,6 +75,20 @@ fn receive(
         match decode_bitmap(captured.bitmap.view()?) {
             Ok(frame) => match session.ingest(&frame) {
                 Ok(event) => {
+                    if !reported_format {
+                        if let Some((profile, mode)) = session.visual_format() {
+                            let label = if mode == 24 {
+                                "RGB888".to_owned()
+                            } else {
+                                format!("{mode} colors")
+                            };
+                            eprintln!(
+                                "detected: {}×{} matrix, {label}",
+                                profile.matrix_width, profile.matrix_height
+                            );
+                            reported_format = true;
+                        }
+                    }
                     if verbose
                         || !matches!(
                             event,
@@ -104,10 +119,14 @@ fn receive(
     }
     source.stop()?;
     let complete = matches!(session.state(), ReceiveState::Complete(_));
+    let format = session.visual_format().map(|(profile, mode)| {
+        serde_json::json!({"matrix_width":profile.matrix_width,
+            "matrix_height":profile.matrix_height,"color_mode":mode})
+    });
     println!(
         "{}",
         serde_json::json!({"complete":complete,"state":format!("{:?}",session.state()),
-        "rate_scope":scope,"metrics":session.metrics.snapshot()})
+        "rate_scope":scope,"visual_format":format,"metrics":session.metrics.snapshot()})
     );
     Ok(if complete { 0 } else { 2 })
 }

@@ -256,5 +256,353 @@
       "profile-256-partial/frame-003.png"
     ],
     "matrix_size": 256
+  },
+  {
+    "case": "profile-512-empty",
+    "filename": "矩阵-😀.bin",
+    "size": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "id": "000102030405060708090a0b0c0d0e0f",
+    "input": "profile-512-empty/input.bin",
+    "frames": [
+      "profile-512-empty/frame-000.bin"
+    ],
+    "images": [
+      "profile-512-empty/frame-000.png"
+    ],
+    "matrix_size": 512
+  },
+  {
+    "case": "profile-512-boundary",
+    "filename": "矩阵-😀.bin",
+    "size": 65468,
+    "sha256": "a42d708c6490df118313a1b49ee038803e3a6b78c5bb910c0e9b7db725116b06",
+    "id": "000102030405060708090a0b0c0d0e0f",
+    "input": "profile-512-boundary/input.bin",
+    "frames": [
+      "profile-512-boundary/frame-000.bin",
+      "profile-512-boundary/frame-001.bin"
+    ],
+    "images": [
+      "profile-512-boundary/frame-000.png",
+      "profile-512-boundary/frame-001.png"
+    ],
+    "matrix_size": 512
+  },
+  {
+    "case": "profile-512-partial",
+    "filename": "矩阵-😀.bin",
+    "size": 130953,
+    "sha256": "a2e4e9892f46340499518baa38d192351898afa9dbcd19d489c76258d10c8e76",
+    "id": "000102030405060708090a0b0c0d0e0f",
+    "input": "profile-512-partial/input.bin",
+    "frames": [
+      "profile-512-partial/frame-000.bin",
+      "profile-512-partial/frame-001.bin",
+      "profile-512-partial/frame-002.bin",
+      "profile-512-partial/frame-003.bin"
+    ],
+    "images": [
+      "profile-512-partial/frame-000.png",
+      "profile-512-partial/frame-001.png",
+      "profile-512-partial/frame-002.png",
+      "profile-512-partial/frame-003.png"
+    ],
+    "matrix_size": 512
+  },
+  {
+    "case": "profile-1028x512-empty",
+    "filename": "矩阵-😀.bin",
+    "size": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "id": "000102030405060708090a0b0c0d0e0f",
+    "input": "profile-1028x512-empty/input.bin",
+    "frames": [
+      "profile-1028x512-empty/frame-000.bin"
+    ],
+    "images": [
+      "profile-1028x512-empty/frame-000.png"
+    ],
+    "matrix_size": "1028x512"
+  },
+  {
+    "case": "profile-1028x512-boundary",
+    "filename": "矩阵-😀.bin",
+    "size": 131516,
+    "sha256": "918cf9efbd3a034ed64e2b40a3cc7732acbf3e89d88de94f777a8ec37f0ff1bc",
+    "id": "000102030405060708090a0b0c0d0e0f",
+    "input": "profile-1028x512-boundary/input.bin",
+    "frames": [
+      "profile-1028x512-boundary/frame-000.bin",
+      "profile-1028x512-boundary/frame-001.bin"
+    ],
+    "images": [
+      "profile-1028x512-boundary/frame-000.png",
+      "profile-1028x512-boundary/frame-001.png"
+    ],
+    "matrix_size": "1028x512"
+  },
+  {
+    "case": "profile-1028x512-partial",
+    "filename": "矩阵-😀.bin",
+    "size": 263049,
+    "sha256": "7ce2459253a7d6ca606731abd94b674a30db8f7dc928994a5398f2c84d4d958f",
+    "id": "000102030405060708090a0b0c0d0e0f",
+    "input": "profile-1028x512-partial/input.bin",
+    "frames": [
+      "profile-1028x512-partial/frame-000.bin",
+      "profile-1028x512-partial/frame-001.bin",
+      "profile-1028x512-partial/frame-002.bin",
+      "profile-1028x512-partial/frame-003.bin"
+    ],
+    "images": [
+      "profile-1028x512-partial/frame-000.png",
+      "profile-1028x512-partial/frame-001.png",
+      "profile-1028x512-partial/frame-002.png",
+      "profile-1028x512-partial/frame-003.png"
+    ],
+    "matrix_size": "1028x512"
+  },
+  {
+    "case": "profile-512x256-empty",
+    "filename": "矩阵-😀.bin",
+    "size": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "id": "000102030405060708090a0b0c0d0e0f",
+    "input": "profile-512x256-empty/input.bin",
+    "frames": [
+      "profile-512x256-empty/frame-000.bin"
+    ],
+    "images": [
+      "profile-512x256-empty/frame-000.png"
+    ],
+    "matrix_size": "512x256"
+  },
+  {
+    "case": "profile-512x256-boundary",
+    "filename": "矩阵-😀.bin",
+    "size": 32700,
+    "sha256": "7db715915875c159ef0864e376f183bd4e450b700a9e9525e8fb482aef890844",
+    "id": "000102030405060708090a0b0c0d0e0f",
+    "input": "profile-512x256-boundary/input.bin",
+    "frames": [
+      "profile-512x256-boundary/frame-000.bin",
+      "profile-512x256-boundary/frame-001.bin"
+    ],
+    "images": [
+      "profile-512x256-boundary/frame-000.png",
+      "profile-512x256-boundary/frame-001.png"
+    ],
+    "matrix_size": "512x256"
+  },
+  {
+    "case": "profile-512x256-partial",
+    "filename": "矩阵-😀.bin",
+    "size": 65417,
+    "sha256": "af60c554115c666ca3e6c3530a99c6d55f4dd89e249906a35420afb77a942d6b",
+    "id": "000102030405060708090a0b0c0d0e0f",
+    "input": "profile-512x256-partial/input.bin",
+    "frames": [
+      "profile-512x256-partial/frame-000.bin",
+      "profile-512x256-partial/frame-001.bin",
+      "profile-512x256-partial/frame-002.bin",
+      "profile-512x256-partial/frame-003.bin"
+    ],
+    "images": [
+      "profile-512x256-partial/frame-000.png",
+      "profile-512x256-partial/frame-001.png",
+      "profile-512x256-partial/frame-002.png",
+      "profile-512x256-partial/frame-003.png"
+    ],
+    "matrix_size": "512x256"
+  },
+  {
+    "case": "profile-256x128-empty",
+    "filename": "矩阵-😀.bin",
+    "size": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "id": "000102030405060708090a0b0c0d0e0f",
+    "input": "profile-256x128-empty/input.bin",
+    "frames": [
+      "profile-256x128-empty/frame-000.bin"
+    ],
+    "images": [
+      "profile-256x128-empty/frame-000.png"
+    ],
+    "matrix_size": "256x128"
+  },
+  {
+    "case": "profile-256x128-boundary",
+    "filename": "矩阵-😀.bin",
+    "size": 8124,
+    "sha256": "cae80eacbad2a2efbe45716afa902f056dc64c05a66d9195a585a738b1ff4de1",
+    "id": "000102030405060708090a0b0c0d0e0f",
+    "input": "profile-256x128-boundary/input.bin",
+    "frames": [
+      "profile-256x128-boundary/frame-000.bin",
+      "profile-256x128-boundary/frame-001.bin"
+    ],
+    "images": [
+      "profile-256x128-boundary/frame-000.png",
+      "profile-256x128-boundary/frame-001.png"
+    ],
+    "matrix_size": "256x128"
+  },
+  {
+    "case": "profile-256x128-partial",
+    "filename": "矩阵-😀.bin",
+    "size": 16265,
+    "sha256": "fe61b59001f843e26a26d3d1cabe72ae309c8cf882889db3ce6676bd5cddd07f",
+    "id": "000102030405060708090a0b0c0d0e0f",
+    "input": "profile-256x128-partial/input.bin",
+    "frames": [
+      "profile-256x128-partial/frame-000.bin",
+      "profile-256x128-partial/frame-001.bin",
+      "profile-256x128-partial/frame-002.bin",
+      "profile-256x128-partial/frame-003.bin"
+    ],
+    "images": [
+      "profile-256x128-partial/frame-000.png",
+      "profile-256x128-partial/frame-001.png",
+      "profile-256x128-partial/frame-002.png",
+      "profile-256x128-partial/frame-003.png"
+    ],
+    "matrix_size": "256x128"
+  },
+  {
+    "case": "color-2-empty",
+    "filename": "颜色-😀.bin",
+    "size": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "id": "000102030405060708090a0b0c0d0e0f",
+    "input": "color-2-empty/input.bin",
+    "frames": [
+      "color-2-empty/frame-000.bin"
+    ],
+    "images": [
+      "color-2-empty/frame-000.png"
+    ],
+    "color_mode": 2
+  },
+  {
+    "case": "color-2-partial",
+    "filename": "颜色-😀.bin",
+    "size": 1997,
+    "sha256": "f1165676226803ea7e072cb135a9641ea3aa0f7094957951b165321e73f9d727",
+    "id": "000102030405060708090a0b0c0d0e0f",
+    "input": "color-2-partial/input.bin",
+    "frames": [
+      "color-2-partial/frame-000.bin",
+      "color-2-partial/frame-001.bin",
+      "color-2-partial/frame-002.bin"
+    ],
+    "images": [
+      "color-2-partial/frame-000.png",
+      "color-2-partial/frame-001.png",
+      "color-2-partial/frame-002.png"
+    ],
+    "color_mode": 2
+  },
+  {
+    "case": "color-8-empty",
+    "filename": "颜色-😀.bin",
+    "size": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "id": "000102030405060708090a0b0c0d0e0f",
+    "input": "color-8-empty/input.bin",
+    "frames": [
+      "color-8-empty/frame-000.bin"
+    ],
+    "images": [
+      "color-8-empty/frame-000.png"
+    ],
+    "color_mode": 8
+  },
+  {
+    "case": "color-8-partial",
+    "filename": "颜色-😀.bin",
+    "size": 6093,
+    "sha256": "4c379b49851ccb5bb5e3c7a82b6e7db81385dace7d54d807d2874b35f0157bec",
+    "id": "000102030405060708090a0b0c0d0e0f",
+    "input": "color-8-partial/input.bin",
+    "frames": [
+      "color-8-partial/frame-000.bin",
+      "color-8-partial/frame-001.bin",
+      "color-8-partial/frame-002.bin"
+    ],
+    "images": [
+      "color-8-partial/frame-000.png",
+      "color-8-partial/frame-001.png",
+      "color-8-partial/frame-002.png"
+    ],
+    "color_mode": 8
+  },
+  {
+    "case": "color-16-empty",
+    "filename": "颜色-😀.bin",
+    "size": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "id": "000102030405060708090a0b0c0d0e0f",
+    "input": "color-16-empty/input.bin",
+    "frames": [
+      "color-16-empty/frame-000.bin"
+    ],
+    "images": [
+      "color-16-empty/frame-000.png"
+    ],
+    "color_mode": 16
+  },
+  {
+    "case": "color-16-partial",
+    "filename": "颜色-😀.bin",
+    "size": 8141,
+    "sha256": "699d5e6f4f011e46c6ce19971bfbb7a21d04402e8fcdac47bfbae45b2be40107",
+    "id": "000102030405060708090a0b0c0d0e0f",
+    "input": "color-16-partial/input.bin",
+    "frames": [
+      "color-16-partial/frame-000.bin",
+      "color-16-partial/frame-001.bin",
+      "color-16-partial/frame-002.bin"
+    ],
+    "images": [
+      "color-16-partial/frame-000.png",
+      "color-16-partial/frame-001.png",
+      "color-16-partial/frame-002.png"
+    ],
+    "color_mode": 16
+  },
+  {
+    "case": "color-24-empty",
+    "filename": "颜色-😀.bin",
+    "size": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "id": "000102030405060708090a0b0c0d0e0f",
+    "input": "color-24-empty/input.bin",
+    "frames": [
+      "color-24-empty/frame-000.bin"
+    ],
+    "images": [
+      "color-24-empty/frame-000.png"
+    ],
+    "color_mode": 24
+  },
+  {
+    "case": "color-24-partial",
+    "filename": "颜色-😀.bin",
+    "size": 49101,
+    "sha256": "831eafe856050d2b151ca4326dee3cb10337394295f97b6303ab75544c2ca43f",
+    "id": "000102030405060708090a0b0c0d0e0f",
+    "input": "color-24-partial/input.bin",
+    "frames": [
+      "color-24-partial/frame-000.bin",
+      "color-24-partial/frame-001.bin",
+      "color-24-partial/frame-002.bin"
+    ],
+    "images": [
+      "color-24-partial/frame-000.png",
+      "color-24-partial/frame-001.png",
+      "color-24-partial/frame-002.png"
+    ],
+    "color_mode": 24
   }
 ]

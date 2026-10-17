@@ -197,23 +197,24 @@ pub fn locate(image: BitmapView<'_>) -> Result<Vec<GridTransform>> {
                     continue;
                 }
                 for profile in PROFILES {
-                    let distance = (profile.matrix_size + 17) as f64;
+                    let dx = (profile.matrix_width + 17) as f64;
+                    let dy = (profile.matrix_height + 17) as f64;
                     // Finder module width is independent of the matrix dimensions.
                     let sx = if bx.abs() > by.abs() { a.sx } else { a.sy };
                     let sy = if cx.abs() > cy.abs() { a.sx } else { a.sy };
-                    if (bl / distance - sx).abs() > sx * 0.2 + 0.1
-                        || (cl / distance - sy).abs() > sy * 0.2 + 0.1
+                    if (bl / dx - sx).abs() > sx * 0.2 + 0.1
+                        || (cl / dy - sy).abs() > sy * 0.2 + 0.1
                     {
                         continue;
                     }
                     let grid = GridTransform {
                         profile,
                         origin: [
-                            a.x - (bx + cx) * 7.5 / distance,
-                            a.y - (by + cy) * 7.5 / distance,
+                            a.x - bx * 7.5 / dx - cx * 7.5 / dy,
+                            a.y - by * 7.5 / dx - cy * 7.5 / dy,
                         ],
-                        x_axis: [bx / distance, by / distance],
-                        y_axis: [cx / distance, cy / distance],
+                        x_axis: [bx / dx, by / dx],
+                        y_axis: [cx / dy, cy / dy],
                     };
                     if !check_timing(image, grid) {
                         continue;
@@ -234,12 +235,20 @@ pub fn locate(image: BitmapView<'_>) -> Result<Vec<GridTransform>> {
 }
 
 fn check_timing(image: BitmapView<'_>, grid: GridTransform) -> bool {
-    for i in (16..grid.profile.matrix_size + 16).step_by(8) {
-        for d in 0..2 {
-            for (x, y) in [
-                (i as f64 + d as f64 + 0.5, 12.5),
-                (12.5, i as f64 + d as f64 + 0.5),
-            ] {
+    for horizontal in [true, false] {
+        let length = if horizontal {
+            grid.profile.matrix_width
+        } else {
+            grid.profile.matrix_height
+        };
+        for i in (16..length + 16).step_by(8) {
+            for d in 0..2 {
+                let coordinate = i as f64 + d as f64 + 0.5;
+                let (x, y) = if horizontal {
+                    (coordinate, 12.5)
+                } else {
+                    (12.5, coordinate)
+                };
                 let Ok(rgb) = grid.sample(image, x, y) else {
                     return false;
                 };

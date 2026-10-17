@@ -120,6 +120,27 @@ fn standard_hash_and_symbol_vectors() {
 }
 
 #[test]
+fn v2_mode_is_crc_covered_and_session_rejects_cross_mode_blocks() {
+    let metadata = frame("color-2-partial", 0);
+    assert_eq!(metadata.header().color_mode, 2);
+    assert_eq!(metadata.metadata().unwrap().block_size, 1980);
+    let mut changed = raw("color-2-partial", 0);
+    changed[7] = 8;
+    assert!(parse_frame(&changed).is_err());
+    assert!(parse_frame(&crc(changed)).is_err());
+    let dir = TestDir::new();
+    let mut session = ReceiveSession::new(&dir.0);
+    session.ingest(&metadata).unwrap();
+    assert_eq!(
+        session.visual_format(),
+        Some((metadata.header().profile, 2))
+    );
+    let other = frame("color-8-partial", 1);
+    assert!(matches!(session.ingest(&other), Err(Error::Invalid(_))));
+    assert_eq!(session.metrics.counters.unique_blocks, 0);
+}
+
+#[test]
 fn presence_bitmap_crosses_word_boundaries_with_out_of_order_blocks() {
     let data: Vec<u8> = (0..4028 * 65 + 3).map(|i| (i % 251) as u8).collect();
     let count = data.len().div_ceil(4028) as u32;
@@ -499,4 +520,35 @@ fn parser_rejects_profile_length_and_block_capacity_mismatches() {
         bytes[72..76].copy_from_slice(&1u32.to_le_bytes());
         assert!(matches!(parse_frame(&crc(bytes)), Err(Error::Invalid(_))));
     }
+}
+
+#[test]
+fn wide_profile_high_length_is_crc_covered_and_bounds_checked() {
+    let wide = frame("profile-1028x512-partial", 1);
+    assert_eq!(wide.header().profile.id, 5);
+    assert_eq!(wide.header().payload_len, 131516);
+    let mut bytes = raw("profile-1028x512-partial", 1);
+    bytes[34] = 3;
+    assert!(matches!(parse_frame(&crc(bytes)), Err(Error::Invalid(_))));
+    let mut old = raw("profile-512-boundary", 1);
+    old[34] = 1;
+    assert!(matches!(parse_frame(&crc(old)), Err(Error::Invalid(_))));
+    let sixth = frame("profile-512x256-boundary", 1);
+    assert_eq!(sixth.header().profile.id, 6);
+    assert_eq!(sixth.header().payload_len, 32700);
+    let mut sixth_bad = raw("profile-512x256-boundary", 1);
+    sixth_bad[34] = 1;
+    assert!(matches!(
+        parse_frame(&crc(sixth_bad)),
+        Err(Error::Invalid(_))
+    ));
+    let seventh = frame("profile-256x128-boundary", 1);
+    assert_eq!(seventh.header().profile.id, 7);
+    assert_eq!(seventh.header().payload_len, 8124);
+    let mut seventh_bad = raw("profile-256x128-boundary", 1);
+    seventh_bad[34] = 1;
+    assert!(matches!(
+        parse_frame(&crc(seventh_bad)),
+        Err(Error::Invalid(_))
+    ));
 }

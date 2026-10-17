@@ -2,7 +2,7 @@
 //! this module; CRC-valid semantic errors are checked again against metadata.
 use crate::{
     metrics::Metrics,
-    protocol::{FrameType, Metadata, TransferId, ValidatedFrame},
+    protocol::{FrameType, Metadata, Profile, TransferId, ValidatedFrame},
     storage::OutputFile,
     Error, Result,
 };
@@ -34,8 +34,9 @@ pub struct ReceiveSession {
     state: ReceiveState,
     directory: PathBuf,
     identity: Option<TransferId>,
+    profile: Option<Profile>,
     metadata: Option<Metadata>,
-    /// Packed presence bits: at most 33328 bytes at the v1 file-size limit.
+    /// Packed presence bits: at most 67800 bytes at the 1 GiB, two-color limit.
     received: Vec<u64>,
     output: Option<OutputFile>,
     pub metrics: Metrics,
@@ -46,6 +47,7 @@ impl ReceiveSession {
             state: ReceiveState::WaitingMetadata,
             directory: output_directory.into(),
             identity: None,
+            profile: None,
             metadata: None,
             received: Vec::new(),
             output: None,
@@ -54,6 +56,10 @@ impl ReceiveSession {
     }
     pub fn state(&self) -> &ReceiveState {
         &self.state
+    }
+    /// The fixed visual format selected by the first CRC-valid metadata frame.
+    pub fn visual_format(&self) -> Option<(Profile, u8)> {
+        Some((self.profile?, self.metadata.as_ref()?.color_mode))
     }
     /// Returns false on success or terminal failure; a capture loop must then stop.
     pub fn is_consuming(&self) -> bool {
@@ -91,7 +97,7 @@ impl ReceiveSession {
         }
         if let Some(meta) = frame.metadata() {
             if let Some(existing) = &self.metadata {
-                if existing != meta {
+                if existing != meta || self.profile != Some(header.profile) {
                     return Err(Error::Conflict);
                 }
                 return Ok(SessionEvent::MetadataRepeat);
@@ -99,6 +105,7 @@ impl ReceiveSession {
             let output = OutputFile::create(&self.directory, &meta.filename)?;
             self.received = vec![0; (header.total_blocks as usize).div_ceil(64)];
             self.identity = Some(header.transfer_id);
+            self.profile = Some(header.profile);
             self.metadata = Some(meta.clone());
             self.output = Some(output);
             self.metrics.counters.total_blocks = header.total_blocks;
@@ -116,7 +123,9 @@ impl ReceiveSession {
             self.metrics.counters.waiting_metadata += 1;
             return Ok(SessionEvent::WaitingMetadata);
         };
-        if header.profile.block_size() != meta.block_size as usize
+        if Some(header.profile) != self.profile
+            || header.color_mode != meta.color_mode
+            || header.profile.block_size_for(header.color_mode) != Some(meta.block_size as usize)
             || header.total_blocks != meta.total_blocks()
             || meta.block_len(header.block_index) != Some(frame.payload().len())
         {

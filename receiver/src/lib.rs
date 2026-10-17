@@ -1,4 +1,4 @@
-//! Transport-independent VMT1 receiver. PNG and future capture adapters share the
+//! Transport-independent VMT1/VMT2 receiver. PNG and live capture share the
 //! same bitmap decoder and receive session; no sockets or desktop APIs live here.
 pub mod capture;
 pub mod codec;

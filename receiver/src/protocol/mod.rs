@@ -4,34 +4,72 @@ use crate::{Error, Result};
 pub const FRAME_SIZE: usize = 4096;
 pub const BLOCK_SIZE: usize = 4028;
 pub const MAX_FILE_SIZE: u64 = 1 << 30;
-pub const MAX_BLOCKS: u32 = MAX_FILE_SIZE.div_ceil(BLOCK_SIZE as u64) as u32;
+pub const MAX_BLOCKS: u32 = MAX_FILE_SIZE.div_ceil((128 * 128 / 8 - 68) as u64) as u32;
 pub const META_INDEX: u32 = u32::MAX;
 /// Versioned predefined geometry; dimensions are never taken from untrusted metadata.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct Profile {
     pub id: u8,
-    pub matrix_size: usize,
+    pub matrix_width: usize,
+    pub matrix_height: usize,
 }
 impl Profile {
     pub fn frame_size(self) -> usize {
-        self.matrix_size * self.matrix_size / 4
+        self.matrix_width * self.matrix_height / 4
     }
     pub fn block_size(self) -> usize {
         self.frame_size() - 68
     }
+    pub fn frame_size_for(self, mode: u8) -> Option<usize> {
+        let area = self.matrix_width * self.matrix_height;
+        Some(match mode {
+            2 => area / 8,
+            4 => area / 4,
+            8 => area * 3 / 8,
+            16 => area / 2,
+            24 => area * 3,
+            _ => return None,
+        })
+    }
+    pub fn block_size_for(self, mode: u8) -> Option<usize> {
+        self.frame_size_for(mode).map(|n| n - 68)
+    }
 }
-pub const PROFILES: [Profile; 3] = [
+pub const PROFILES: [Profile; 7] = [
     Profile {
         id: 1,
-        matrix_size: 128,
+        matrix_width: 128,
+        matrix_height: 128,
     },
     Profile {
         id: 2,
-        matrix_size: 160,
+        matrix_width: 160,
+        matrix_height: 160,
     },
     Profile {
         id: 3,
-        matrix_size: 256,
+        matrix_width: 256,
+        matrix_height: 256,
+    },
+    Profile {
+        id: 4,
+        matrix_width: 512,
+        matrix_height: 512,
+    },
+    Profile {
+        id: 5,
+        matrix_width: 1028,
+        matrix_height: 512,
+    },
+    Profile {
+        id: 6,
+        matrix_width: 512,
+        matrix_height: 256,
+    },
+    Profile {
+        id: 7,
+        matrix_width: 256,
+        matrix_height: 128,
     },
 ];
 pub type TransferId = [u8; 16];
@@ -47,6 +85,8 @@ pub enum FrameType {
 pub struct FrameHeader {
     /// CRC-covered predefined geometry, locked for this transfer.
     pub profile: Profile,
+    /// 4 is the legacy VMT1 palette; 2/8/16/24 use the VMT2 bootstrap.
+    pub color_mode: u8,
     /// Metadata initializes the session; data is stored only after initialization.
     pub kind: FrameType,
     /// Stable across all repetitions of one prepared file.
@@ -56,7 +96,7 @@ pub struct FrameHeader {
     /// Number of unique data blocks, excluding all metadata repetitions.
     pub total_blocks: u32,
     /// Effective bytes; excludes the zero padding and CRC trailer.
-    pub payload_len: u16,
+    pub payload_len: u32,
 }
 
 /// Metadata is immutable once accepted. Filename is still untrusted filesystem input.
@@ -66,6 +106,7 @@ pub struct Metadata {
     pub file_size: u64,
     /// Profile-specific fixed payload capacity, including short-final-block transfers.
     pub block_size: u32,
+    pub color_mode: u8,
     /// Digest of original file bytes in index order, not of image or padded frames.
     pub sha256: [u8; 32],
     /// Strict UTF-8, not normalized; safe_basename is mandatory before publication.
@@ -116,21 +157,32 @@ fn u32_at(b: &[u8], i: usize) -> u32 {
 /// Verify all frame-local invariants before returning an owned, bounded frame.
 /// The final block's exact length is checked later against the session metadata.
 pub fn parse_frame(bytes: &[u8]) -> Result<ValidatedFrame> {
-    let profile = PROFILES
-        .iter()
-        .find(|p| p.frame_size() == bytes.len())
-        .copied()
-        .ok_or(Error::Invalid("frame size"))?;
+    if bytes.len() < 68 {
+        return Err(Error::Invalid("frame size"));
+    }
     let end = bytes.len() - 4;
-    let block_size = profile.block_size();
     if crc32fast::hash(&bytes[..end]) != u32_at(bytes, end) {
         return Err(Error::Crc);
     }
+    let profile = PROFILES
+        .iter()
+        .find(|p| p.id == bytes[6])
+        .copied()
+        .ok_or(Error::Invalid("profile"))?;
+    let mode = match bytes[4] {
+        1 if bytes[7] == 0 => 4,
+        2 if matches!(bytes[7], 2 | 8 | 16 | 24) => bytes[7],
+        _ => return Err(Error::Invalid("version/color mode")),
+    };
+    if profile.frame_size_for(mode) != Some(bytes.len()) {
+        return Err(Error::Invalid("frame size"));
+    }
+    let block_size = profile.block_size_for(mode).unwrap();
     if &bytes[..4] != b"VMT1"
-        || bytes[4] != 1
         || bytes[6] != profile.id
-        || bytes[7] != 0
-        || bytes[34..64].iter().any(|&b| b != 0)
+        || bytes[if mode != 4 || profile.id == 5 { 36 } else { 34 }..64]
+            .iter()
+            .any(|&b| b != 0)
     {
         return Err(Error::Invalid("version/profile/flags/reserved"));
     }
@@ -141,7 +193,12 @@ pub fn parse_frame(bytes: &[u8]) -> Result<ValidatedFrame> {
     };
     let index = u32_at(bytes, 24);
     let total = u32_at(bytes, 28);
-    let len = u16_at(bytes, 32) as usize;
+    let len = u16_at(bytes, 32) as usize
+        + if mode != 4 || profile.id == 5 {
+            (u16_at(bytes, 34) as usize) << 16
+        } else {
+            0
+        };
     if len > block_size || total > MAX_FILE_SIZE.div_ceil(block_size as u64) as u32 {
         return Err(Error::Invalid("payload length/block count"));
     }
@@ -167,6 +224,7 @@ pub fn parse_frame(bytes: &[u8]) -> Result<ValidatedFrame> {
             let meta = Metadata {
                 file_size,
                 block_size: block_size as u32,
+                color_mode: mode,
                 sha256: payload[12..44].try_into().unwrap(),
                 filename: std::str::from_utf8(&payload[46..])
                     .map_err(|_| Error::Invalid("filename UTF-8"))?
@@ -188,11 +246,12 @@ pub fn parse_frame(bytes: &[u8]) -> Result<ValidatedFrame> {
     Ok(ValidatedFrame {
         header: FrameHeader {
             profile,
+            color_mode: mode,
             kind,
             transfer_id: bytes[8..24].try_into().unwrap(),
             block_index: index,
             total_blocks: total,
-            payload_len: len as u16,
+            payload_len: len as u32,
         },
         payload: payload.to_vec(),
         metadata,
@@ -203,7 +262,7 @@ pub fn parse_frame(bytes: &[u8]) -> Result<ValidatedFrame> {
 pub fn unpack_symbols(symbols: &[u8]) -> Result<Vec<u8>> {
     if !PROFILES
         .iter()
-        .any(|p| symbols.len() == p.matrix_size * p.matrix_size)
+        .any(|p| symbols.len() == p.matrix_width * p.matrix_height)
     {
         return Err(Error::Invalid("symbol count"));
     }
@@ -213,6 +272,46 @@ pub fn unpack_symbols(symbols: &[u8]) -> Result<Vec<u8>> {
             return Err(Error::Invalid("data symbol"));
         }
         out[i / 4] |= s << (6 - (i % 4) * 2);
+    }
+    Ok(out)
+}
+
+/// VMT2 symbol stream. Indexed modes are packed most-significant-bit first;
+/// RGB888 stores exactly three channel bytes per data symbol.
+pub fn unpack_symbols_mode(symbols: &[u32], profile: Profile, mode: u8) -> Result<Vec<u8>> {
+    let Some(size) = profile.frame_size_for(mode) else {
+        return Err(Error::Invalid("color mode"));
+    };
+    if symbols.len() != profile.matrix_width * profile.matrix_height {
+        return Err(Error::Invalid("symbol count"));
+    }
+    let mut out = vec![0u8; size];
+    if mode == 24 {
+        for (i, &symbol) in symbols.iter().enumerate() {
+            if symbol > 0xffffff {
+                return Err(Error::Invalid("RGB symbol"));
+            }
+            out[i * 3] = (symbol >> 16) as u8;
+            out[i * 3 + 1] = (symbol >> 8) as u8;
+            out[i * 3 + 2] = symbol as u8;
+        }
+    } else {
+        let bits = match mode {
+            2 => 1,
+            4 => 2,
+            8 => 3,
+            16 => 4,
+            _ => unreachable!(),
+        };
+        for (i, &symbol) in symbols.iter().enumerate() {
+            if symbol >= (1 << bits) {
+                return Err(Error::Invalid("data symbol"));
+            }
+            for j in 0..bits {
+                let bit = i * bits + j;
+                out[bit / 8] |= (((symbol >> (bits - 1 - j)) & 1) << (7 - bit % 8)) as u8;
+            }
+        }
     }
     Ok(out)
 }

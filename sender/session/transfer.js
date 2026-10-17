@@ -8,7 +8,7 @@
    * readAt(offset,length,signal) must return exactly length bytes or reject. It must
    * represent one immutable local file. Network-backed sources are not allowed.
    */
-  /** @typedef {{metadata:Object,metadataFrame:Uint8Array,totalBlocks:number,matrixSize:128|160|256,readFrame:function(number,AbortSignal=):Promise<Uint8Array>}} PreparedTransfer */
+  /** @typedef {{metadata:Object,metadataFrame:Uint8Array,totalBlocks:number,matrixSize:128|160|256|512|"1028x512"|"512x256"|"256x128",readFrame:function(number,AbortSignal=):Promise<Uint8Array>}} PreparedTransfer */
   function checkAbort(signal) { if(signal && signal.aborted) { const e=new Error('preparation cancelled');e.name='AbortError';throw e; } }
   /** Wrap a browser File using bounded Blob slices and abortable FileReader. */
   function fileSource(file) {
@@ -29,15 +29,16 @@
    * options.matrixSize selects a predefined profile, immutable for this transfer.
    * options.id is only for deterministic fixtures; production uses crypto.getRandomValues.
    * @param {ByteSource} source
-   * @param {{id?:Uint8Array,matrixSize?:128|160|256,signal?:AbortSignal,onProgress?:function(number,number)}} options
+   * @param {{id?:Uint8Array,matrixSize?:128|160|256|512|"1028x512"|"512x256"|"256x128",colorMode?:2|4|8|16|24,signal?:AbortSignal,onProgress?:function(number,number)}} options
    * @returns {Promise<PreparedTransfer>}
    */
   async function prepareTransfer(source,options) {
     options=options||{}; checkAbort(options.signal);
     const id=options.id ? new Uint8Array(options.id) : crypto.getRandomValues(new Uint8Array(16));
     const name=source.name.split(/[\\/]/).pop() || 'received.bin';
-    const profile=codec.profileForSize(options.matrixSize===undefined?128:options.matrixSize),blockSize=profile.blockSize;
-    const metadata={id,name,matrixSize:profile.matrixSize,fileSize:source.size,sha256:new Uint8Array(32)};
+    const spec=codec.layout(options.matrixSize===undefined?128:options.matrixSize,options.colorMode),blockSize=spec.blockSize;
+    const metadata={id,name,matrixSize:spec.profile.matrixSize,fileSize:source.size,sha256:new Uint8Array(32)};
+    if(spec.version===2)metadata.colorMode=spec.mode;
     codec.validateMetadata(metadata);
     const hash=sha256.create(); // create/update uses the JS incremental implementation, also in Node.
     if(options.onProgress) options.onProgress(0,source.size);
@@ -52,7 +53,7 @@
     }
     checkAbort(options.signal);metadata.sha256=new Uint8Array(hash.array());
     const metadataFrame=codec.encodeMetadata(metadata),totalBlocks=Math.ceil(source.size/blockSize);
-    return {metadata,metadataFrame,totalBlocks,matrixSize:profile.matrixSize,async readFrame(index,signal) {
+    return {metadata,metadataFrame,totalBlocks,matrixSize:spec.profile.matrixSize,async readFrame(index,signal) {
       checkAbort(signal);
       if(!Number.isInteger(index)||index<0||index>=totalBlocks) throw new RangeError('block index out of range');
       const length=Math.min(blockSize,source.size-index*blockSize);

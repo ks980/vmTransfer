@@ -8,7 +8,7 @@
 ```text
 sender/
   index.html                  自动循环发送页面（静态、无构建）
-  protocol/codec.js           头部、元数据、CRC、2-bit 打包/解包
+  protocol/codec.js           VMT1/VMT2 头部、元数据、CRC、按颜色模式打包/解包
   render/canvas.js            固定视觉布局 → RGBA → Canvas
   session/transfer.js         FileReader 适配、分块哈希、按需取块、循环帧顺序
   player/contracts.js         播放器类型和函数契约
@@ -82,7 +82,7 @@ flowchart LR
 | `ByteSource` | `name`, `size`, `readAt(offset, length, signal?) → Promise<Uint8Array>`；只读本地输入，必须精确返回指定长度 |
 | `PreparedTransfer` | `metadata`, `metadataFrame`, `totalBlocks`, `readFrame(index, signal?)`；仅保留小型会话信息，不保留整套图像 |
 | `prepareTransfer(source, options?)` | 返回 `Promise<PreparedTransfer>`；哈希完成前不播放；1 MiB 分块；取消抛 `AbortError` |
-| `encodeMetadata(meta)` | 按 matrixSize/profile 返回 4096、6400 或 16384 字节规范帧；验证文件大小、UTF-8 名称和 ID/digest 长度 |
+| `encodeMetadata(meta)` | 按矩阵尺寸与颜色模式生成固定长度规范帧；验证文件大小、UTF-8 名称和 ID/digest 长度 |
 | `encodeData(meta, index, payload)` | 验证该块精确长度，补零并写 CRC；输入数据不压缩 |
 | `packSymbols(bytes)` / `unpackSymbols(symbols)` | 纯函数，高位在前，拒绝白色数据符号 |
 | `renderFrame(bytes, scale)` | 返回 `{width,height,stride,data}`，RGBA8，逻辑布局固定 |
@@ -96,7 +96,7 @@ flowchart LR
 
 | 类型 / 函数 | 字段与语义 |
 |---|---|
-| `FrameHeader` | `kind`, `[u8;16] transfer_id`, `u32 block_index/total_blocks`, `u16 payload_len` |
+| `FrameHeader` | `kind`, `color_mode`, `[u8;16] transfer_id`, `u32 block_index/total_blocks/payload_len` |
 | `Metadata` | `u64 file_size`, `u32 block_size`, `[u8;32] sha256`, `String filename`；只有解析后值可进入会话 |
 | `ValidatedFrame` | 字段私有，只能由解析器构造；getter 提供不可变头部、载荷和元数据 |
 | `BitmapView<'a>` | 借用像素，显式 width/height/stride/PixelFormat；构造时验证所有缓冲区边界 |
@@ -123,7 +123,8 @@ impl ReceiveSession {
 冲突、哈希失败或 I/O 错误进入 `Failed`。完成后再次 ingest 返回 `AlreadyComplete`，调用方必须停止拉帧。
 无效图像/CRC 不进入收集器；不兼容数据帧丢弃并计数；不同 ID 明确返回 `ForeignTransfer`。
 
-内存上限：帧按预定义 profile 固定为 4096、6400 或 16384 字节；1 GiB 文件最多 266570 块，位图最多 33328 字节。
+内存上限：帧由预定义矩阵与颜色模式决定，最大为 RGB888 1028×512 的 1579008 字节；
+1 GiB 文件最多 542294 块（128×128、2 色），存在位图不足 67800 字节。
 PNG 最多 32 Mi 像素、单边最多 8192；输入 PNG 最多 128 MiB。定位器最多 16384 次纵向检查、
 64 个 finder、16 个候选网格。低置信度或超过预算的图像丢弃，等待后续循环。
 
@@ -170,10 +171,11 @@ pub trait ProgressView {
 适配器已编译/组件测试通过；用户在 GNOME 桌面终端完成连续接收，恢复 40/40 块并验证文件 SHA-256。实际 Windows 7 / VNC 链路仍待验收。
 
 
-### 三档矩阵接口
+### 七档矩阵接口
 
-`codec.PROFILES` / Rust `protocol::PROFILES` 定义 profile 1/2/3，矩阵边长为 128/160/256，
-有效载荷为 4028/6332/16316 字节。`prepareTransfer(source, {matrixSize})` 决定本次文件的分块；
+`codec.PROFILES` / Rust `protocol::PROFILES` 定义 profile 1–7，矩阵尺寸为 128×128、160×160、256×256、512×512、1028×512、512×256、256×128，
+有效载荷为 4028、6332、16316、65468、131516、32700、8124 字节。`prepareTransfer(source, {matrixSize})` 决定本次文件的分块；
 PreparedTransfer 携带 matrixSize，播放器只改变物理 scale，不在循环中更改矩阵。
-`renderFrame` 按帧字节数选择预定义布局。GridTransform 携带候选 profile；解码器验证其与 CRC 覆盖的头部一致。
+`renderFrame` 按头部几何 profile、版本和颜色模式选择预定义布局。GridTransform 携带候选几何 profile；
+解码器先读固定黑白引导条，再验证它与 CRC 覆盖的头部一致。
 ReceiveSession 按已验证元数据 block_size 计算磁盘偏移并拒绝不同 profile 的数据。
