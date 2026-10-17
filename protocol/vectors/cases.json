@@ -1,0 +1,260 @@
+[
+  {
+    "case": "empty",
+    "filename": "empty.bin",
+    "size": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "id": "000102030405060708090a0b0c0d0e0f",
+    "input": "empty/input.bin",
+    "frames": [
+      "empty/frame-000.bin"
+    ],
+    "images": [
+      "empty/frame-000.png"
+    ]
+  },
+  {
+    "case": "one",
+    "filename": "one.bin",
+    "size": 1,
+    "sha256": "6e340b9cffb37a989ca544e6bb780a2c78901d3fb33738768511a30617afa01d",
+    "id": "000102030405060708090a0b0c0d0e0f",
+    "input": "one/input.bin",
+    "frames": [
+      "one/frame-000.bin",
+      "one/frame-001.bin"
+    ],
+    "images": [
+      "one/frame-000.png",
+      "one/frame-001.png"
+    ]
+  },
+  {
+    "case": "all-bytes",
+    "filename": "all-bytes.bin",
+    "size": 256,
+    "sha256": "40aff2e9d2d8922e47afd4648e6967497158785fbd1da870e7110266bf944880",
+    "id": "000102030405060708090a0b0c0d0e0f",
+    "input": "all-bytes/input.bin",
+    "frames": [
+      "all-bytes/frame-000.bin",
+      "all-bytes/frame-001.bin"
+    ],
+    "images": [
+      "all-bytes/frame-000.png",
+      "all-bytes/frame-001.png"
+    ]
+  },
+  {
+    "case": "before-boundary",
+    "filename": "before.bin",
+    "size": 4027,
+    "sha256": "74fbccdb74e20bb2ae416cc92c51c4fef773b4853fd1777d3d0f18283dd403d1",
+    "id": "000102030405060708090a0b0c0d0e0f",
+    "input": "before-boundary/input.bin",
+    "frames": [
+      "before-boundary/frame-000.bin",
+      "before-boundary/frame-001.bin"
+    ],
+    "images": [
+      "before-boundary/frame-000.png",
+      "before-boundary/frame-001.png"
+    ]
+  },
+  {
+    "case": "boundary",
+    "filename": "boundary.bin",
+    "size": 4028,
+    "sha256": "359ed7623fbe4cd58c6454a0cb6bd87920730df8fa8d051405c52c01971eaa79",
+    "id": "000102030405060708090a0b0c0d0e0f",
+    "input": "boundary/input.bin",
+    "frames": [
+      "boundary/frame-000.bin",
+      "boundary/frame-001.bin"
+    ],
+    "images": [
+      "boundary/frame-000.png",
+      "boundary/frame-001.png"
+    ]
+  },
+  {
+    "case": "after-boundary",
+    "filename": "after.bin",
+    "size": 4029,
+    "sha256": "b17a8713d4255ed5646bcf1b175003980df04e91e28e7936ee77054ce91feec5",
+    "id": "000102030405060708090a0b0c0d0e0f",
+    "input": "after-boundary/input.bin",
+    "frames": [
+      "after-boundary/frame-000.bin",
+      "after-boundary/frame-001.bin",
+      "after-boundary/frame-002.bin"
+    ],
+    "images": [
+      "after-boundary/frame-000.png",
+      "after-boundary/frame-001.png",
+      "after-boundary/frame-002.png"
+    ]
+  },
+  {
+    "case": "zeros",
+    "filename": "zeros.bin",
+    "size": 8056,
+    "sha256": "2254bfbbe677653bf09b628873719e5916704afde2fd91f157fe7bf8cd7f6626",
+    "id": "000102030405060708090a0b0c0d0e0f",
+    "input": "zeros/input.bin",
+    "frames": [
+      "zeros/frame-000.bin",
+      "zeros/frame-001.bin",
+      "zeros/frame-002.bin"
+    ],
+    "images": [
+      "zeros/frame-000.png",
+      "zeros/frame-001.png",
+      "zeros/frame-002.png"
+    ]
+  },
+  {
+    "case": "random",
+    "filename": "random.bin",
+    "size": 12345,
+    "sha256": "3b5fb7f4b7bdac07676db0e7d03243694e5f64b767e041acdb532ca239e07693",
+    "id": "000102030405060708090a0b0c0d0e0f",
+    "input": "random/input.bin",
+    "frames": [
+      "random/frame-000.bin",
+      "random/frame-001.bin",
+      "random/frame-002.bin",
+      "random/frame-003.bin",
+      "random/frame-004.bin"
+    ],
+    "images": [
+      "random/frame-000.png",
+      "random/frame-001.png",
+      "random/frame-002.png",
+      "random/frame-003.png",
+      "random/frame-004.png"
+    ]
+  },
+  {
+    "case": "unicode",
+    "filename": "实验数据-😀.bin",
+    "size": 5,
+    "sha256": "35f5a9d2133194c803a3e4597741c37701602312ef2c590394a58d174ec43ddd",
+    "id": "000102030405060708090a0b0c0d0e0f",
+    "input": "unicode/input.bin",
+    "frames": [
+      "unicode/frame-000.bin",
+      "unicode/frame-001.bin"
+    ],
+    "images": [
+      "unicode/frame-000.png",
+      "unicode/frame-001.png"
+    ]
+  },
+  {
+    "case": "profile-160-empty",
+    "filename": "矩阵-😀.bin",
+    "size": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "id": "000102030405060708090a0b0c0d0e0f",
+    "input": "profile-160-empty/input.bin",
+    "frames": [
+      "profile-160-empty/frame-000.bin"
+    ],
+    "images": [
+      "profile-160-empty/frame-000.png"
+    ],
+    "matrix_size": 160
+  },
+  {
+    "case": "profile-160-boundary",
+    "filename": "矩阵-😀.bin",
+    "size": 6332,
+    "sha256": "9edc5dd2f840382b5347df965553521758ab1e6a1314403036fafda3c2e0846b",
+    "id": "000102030405060708090a0b0c0d0e0f",
+    "input": "profile-160-boundary/input.bin",
+    "frames": [
+      "profile-160-boundary/frame-000.bin",
+      "profile-160-boundary/frame-001.bin"
+    ],
+    "images": [
+      "profile-160-boundary/frame-000.png",
+      "profile-160-boundary/frame-001.png"
+    ],
+    "matrix_size": 160
+  },
+  {
+    "case": "profile-160-partial",
+    "filename": "矩阵-😀.bin",
+    "size": 12681,
+    "sha256": "469f7cb94940e4cb2b411c7e322998f11df30c1d8436afe062862b34180b43b6",
+    "id": "000102030405060708090a0b0c0d0e0f",
+    "input": "profile-160-partial/input.bin",
+    "frames": [
+      "profile-160-partial/frame-000.bin",
+      "profile-160-partial/frame-001.bin",
+      "profile-160-partial/frame-002.bin",
+      "profile-160-partial/frame-003.bin"
+    ],
+    "images": [
+      "profile-160-partial/frame-000.png",
+      "profile-160-partial/frame-001.png",
+      "profile-160-partial/frame-002.png",
+      "profile-160-partial/frame-003.png"
+    ],
+    "matrix_size": 160
+  },
+  {
+    "case": "profile-256-empty",
+    "filename": "矩阵-😀.bin",
+    "size": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "id": "000102030405060708090a0b0c0d0e0f",
+    "input": "profile-256-empty/input.bin",
+    "frames": [
+      "profile-256-empty/frame-000.bin"
+    ],
+    "images": [
+      "profile-256-empty/frame-000.png"
+    ],
+    "matrix_size": 256
+  },
+  {
+    "case": "profile-256-boundary",
+    "filename": "矩阵-😀.bin",
+    "size": 16316,
+    "sha256": "1bff0c999024274db6c54a6e8f434607b987ebcba33fcff7215b9403e626a6bc",
+    "id": "000102030405060708090a0b0c0d0e0f",
+    "input": "profile-256-boundary/input.bin",
+    "frames": [
+      "profile-256-boundary/frame-000.bin",
+      "profile-256-boundary/frame-001.bin"
+    ],
+    "images": [
+      "profile-256-boundary/frame-000.png",
+      "profile-256-boundary/frame-001.png"
+    ],
+    "matrix_size": 256
+  },
+  {
+    "case": "profile-256-partial",
+    "filename": "矩阵-😀.bin",
+    "size": 32649,
+    "sha256": "508d47157db6dff42f99b54d3d699d3341dff198b3ac379f076034877082cf4d",
+    "id": "000102030405060708090a0b0c0d0e0f",
+    "input": "profile-256-partial/input.bin",
+    "frames": [
+      "profile-256-partial/frame-000.bin",
+      "profile-256-partial/frame-001.bin",
+      "profile-256-partial/frame-002.bin",
+      "profile-256-partial/frame-003.bin"
+    ],
+    "images": [
+      "profile-256-partial/frame-000.png",
+      "profile-256-partial/frame-001.png",
+      "profile-256-partial/frame-002.png",
+      "profile-256-partial/frame-003.png"
+    ],
+    "matrix_size": 256
+  }
+]

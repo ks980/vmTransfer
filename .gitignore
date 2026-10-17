@@ -1,0 +1,17 @@
+# Cargo builds and test output.
+/receiver/target/
+/target/
+
+# Interrupted receiver writes are never source fixtures.
+*.part
+
+# Local tool and editor state.
+node_modules/
+__pycache__/
+*.py[cod]
+.venv/
+.idea/
+.vscode/
+*.swp
+.DS_Store
+Thumbs.db

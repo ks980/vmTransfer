@@ -1,0 +1,19 @@
+<!doctype html><html lang="en"><meta charset="utf-8"><title>VMT browser smoke</title>
+<style>body{margin:0}canvas{display:block;image-rendering:pixelated}</style>
+<canvas id="frame"></canvas><p id="result">FAIL: scripts did not complete</p>
+<script src="../sender/vendor/sha256.js"></script><script src="../sender/protocol/codec.js"></script>
+<script src="../sender/render/canvas.js"></script><script>
+/* Synchronous real-browser Canvas smoke test. Capture ?data=1 after metadata.
+ * Original bytes are 0..255. The Rust decoder receives only the screenshots.
+ */
+try {
+  const input=new Uint8Array(256);for(let i=0;i<256;i++)input[i]=i;
+  const id=new Uint8Array(16);for(let i=0;i<16;i++)id[i]=i;
+  const digest=sha256.create().update(input);
+  if(digest.hex()!=='40aff2e9d2d8922e47afd4648e6967497158785fbd1da870e7110266bf944880')throw Error('SHA mismatch');
+  const metadata={id,name:'browser-smoke.bin',fileSize:input.length,sha256:new Uint8Array(digest.array())};
+  const bytes=location.search==='?data=1'?VMT.codec.encodeData(metadata,0,input):VMT.codec.encodeMetadata(metadata);
+  VMT.render.drawCanvas(document.getElementById('frame'),VMT.render.renderFrame(bytes,4));
+  document.getElementById('result').textContent='PASS: browser SHA, encoding and Canvas';
+} catch(e) {document.getElementById('result').textContent='FAIL: '+e.message;}
+</script></html>
